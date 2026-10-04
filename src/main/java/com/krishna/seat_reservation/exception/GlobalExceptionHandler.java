@@ -1,7 +1,6 @@
 package com.krishna.seat_reservation.exception;
 
 import java.time.OffsetDateTime;
-import org.springframework.web.server.ResponseStatusException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -10,9 +9,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.krishna.seat_reservation.metrics.ReservationMetrics;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+	private final ReservationMetrics reservationMetrics;
+	
+	public GlobalExceptionHandler(ReservationMetrics reservationMetrics) {
+	    this.reservationMetrics = reservationMetrics;
+	}
 	
 	@ExceptionHandler(ResponseStatusException.class)
 	public ResponseEntity<Map<String, Object>> handleResponseStatusException(
@@ -30,20 +37,21 @@ public class GlobalExceptionHandler {
 	            .body(body);
 	}
 
-    @ExceptionHandler(SeatReservationException.class)
-    public ResponseEntity<Map<String, Object>> handleSeatReservationException(
-            SeatReservationException exception) {
+	@ExceptionHandler(SeatReservationException.class)
+	public ResponseEntity<Map<String, Object>> handleSeatReservationException(
+	        SeatReservationException exception) {
 
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(Map.of(
-                        "timestamp", OffsetDateTime.now().toString(),
-                        "status", 409,
-                        "error", "CONFLICT",
-                        "message", exception.getMessage()
-                ));
-    }
+	    reservationMetrics.incrementConflicts();
 
+	    return ResponseEntity
+	            .status(HttpStatus.CONFLICT)
+	            .body(Map.of(
+	                    "timestamp", OffsetDateTime.now().toString(),
+	                    "status", 409,
+	                    "error", "CONFLICT",
+	                    "message", exception.getMessage()
+	            ));
+	}
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFoundException(
             ResourceNotFoundException exception) {
