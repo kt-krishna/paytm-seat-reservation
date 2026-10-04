@@ -1,5 +1,7 @@
 package com.krishna.seat_reservation.service;
-
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +127,7 @@ public class ReservationService {
 
             var key = existingKey.get();
 
-            String requestHash = String.join(",", seats);
+            String requestHash = hashRequest(String.join(",", seats));
 
             if (!key.getRequestHash().equals(requestHash)) {
                 throw new SeatReservationException(
@@ -238,8 +240,7 @@ public class ReservationService {
         idempotencyKey.setShowId(showId);
         idempotencyKey.setIdempotencyKey(
                 request.getIdempotencyKey());
-        idempotencyKey.setRequestHash(
-                String.join(",", seats));
+        idempotencyKey.setRequestHash(hashRequest(String.join(",", seats)));
         idempotencyKey.setReservationId(reservationId);
         idempotencyKey.setCreatedAt(OffsetDateTime.now());
 
@@ -255,6 +256,24 @@ public class ReservationService {
                 reservation.getAmountPaise());
 
         return buildResponse(reservation);
+    }
+    
+    private String hashRequest(String request) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(
+                    request.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+
+            return hex.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm not available", e);
+        }
     }
 
     private ReservationResponse buildResponse(
