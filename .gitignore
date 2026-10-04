@@ -44,3 +44,5 @@ result*.txt
 idempotency-request*.json
 idempotency-result*.txt
 load-request-*.json
+app.jar
+concurrency-test.ps1
