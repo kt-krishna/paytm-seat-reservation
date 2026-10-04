@@ -55,10 +55,21 @@ public class ReservationController {
     }
     @PostMapping("/reservations/{reservationId}/cancel")
     public ResponseEntity<ReservationResponse> cancel(
-            @PathVariable UUID reservationId) {
+            @PathVariable UUID reservationId,
+            @RequestHeader(value = "X-User-Id", required = false)
+            String userId) {
+
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "X-User-Id header is required"
+            );
+        }
 
         ReservationResponse response =
-                reservationService.cancel(reservationId);
+                reservationService.cancel(
+                        reservationId,
+                        userId);
 
         return ResponseEntity.ok(response);
     }

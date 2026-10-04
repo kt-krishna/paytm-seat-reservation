@@ -164,8 +164,13 @@ class ReservationConcurrencyTest {
 		String reservationId = reserveResponse.body().split("\"reservationId\":\"")[1].split("\"")[0];
 
 		HttpRequest cancelRequest = HttpRequest.newBuilder()
-				.uri(URI.create("http://localhost:8080/shows/reservations/" + reservationId + "/cancel"))
-				.POST(HttpRequest.BodyPublishers.noBody()).build();
+		        .uri(URI.create(
+		                "http://localhost:8080/shows/reservations/"
+		                        + reservationId
+		                        + "/cancel"))
+		        .header("X-User-Id", "cancel-test-user")
+		        .POST(HttpRequest.BodyPublishers.noBody())
+		        .build();
 
 		HttpResponse<String> cancelResponse = client.send(cancelRequest, HttpResponse.BodyHandlers.ofString());
 
@@ -182,6 +187,45 @@ class ReservationConcurrencyTest {
 		System.out.println("Second Reserve Body   : " + secondReserveResponse.body());
 
 		assertEquals(201, secondReserveResponse.statusCode());
+	}
+	@Test
+	void shouldRejectCancellationByDifferentUser() throws Exception {
+
+	    String showId = createShowWithSeats(List.of("A1", "A2"));
+
+	    HttpResponse<String> reserveResponse =
+	            reserve(showId, "owner-user", List.of("A1"));
+
+	    assertEquals(201, reserveResponse.statusCode());
+
+	    String reservationId =
+	            reserveResponse.body()
+	                    .split("\"reservationId\":\"")[1]
+	                    .split("\"")[0];
+
+	    HttpRequest cancelRequest = HttpRequest.newBuilder()
+	            .uri(URI.create(
+	                    "http://localhost:8080/shows/reservations/"
+	                            + reservationId
+	                            + "/cancel"))
+	            .header("X-User-Id", "different-user")
+	            .POST(HttpRequest.BodyPublishers.noBody())
+	            .build();
+
+	    HttpResponse<String> cancelResponse =
+	            client.send(
+	                    cancelRequest,
+	                    HttpResponse.BodyHandlers.ofString());
+
+	    System.out.println(
+	            "Unauthorized Cancel Status : "
+	                    + cancelResponse.statusCode());
+
+	    System.out.println(
+	            "Unauthorized Cancel Body   : "
+	                    + cancelResponse.body());
+
+	    assertEquals(409, cancelResponse.statusCode());
 	}
 
 	@Test

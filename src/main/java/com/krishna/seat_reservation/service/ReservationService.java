@@ -287,17 +287,22 @@ public class ReservationService {
     }
 
     @Transactional
-    public ReservationResponse cancel(UUID reservationId) {
+    public ReservationResponse cancel(UUID reservationId, String userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Reservation not found"));
 
         log.info(
-                "reservation_cancellation_requested reservationId={} userId={} status={}",
+                "reservation_cancellation_requested reservationId={} userId={} owner={}",
                 reservationId,
-                reservation.getUserId(),
-                reservation.getStatus());
+                userId,
+                reservation.getUserId());
+
+        if (!reservation.getUserId().equals(userId)) {
+            throw new SeatReservationException(
+                    "You are not allowed to cancel this reservation");
+        }
 
         if (reservation.getStatus() == Reservation.ReservationStatus.CANCELLED) {
             return buildResponse(reservation);
@@ -315,6 +320,7 @@ public class ReservationService {
         showSeatRepository.releaseSeatsByReservationId(reservationId);
 
         reservationMetrics.incrementCancellations();
+
         reservation.setStatus(Reservation.ReservationStatus.CANCELLED);
 
         log.info(
