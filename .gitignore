@@ -37,3 +37,9 @@ build/
 *.env
 application-local.properties
 application-local.yml
+
+### Local test artifacts ###
+request*.json
+result*.txt
+idempotency-request*.json
+idempotency-result*.txt

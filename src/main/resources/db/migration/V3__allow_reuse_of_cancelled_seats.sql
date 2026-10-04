@@ -1,0 +1,2 @@
+ALTER TABLE reservation_seats
+DROP CONSTRAINT uq_reservation_seat;
