@@ -78,7 +78,19 @@ public class GlobalExceptionHandler {
                         "message", message
                 ));
     }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+            IllegalArgumentException exception) {
 
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "timestamp", OffsetDateTime.now().toString(),
+                        "status", 400,
+                        "error", "BAD_REQUEST",
+                        "message", exception.getMessage()
+                ));
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(
             Exception ex) {
